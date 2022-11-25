@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>LetItSnowWpf</id>
+    <version>1.0.0</version>
+    <title>Let It Snow WPF</title>
+    <authors>NNmod</authors>
+    <licenseUrl>https://github.com/NNmod/LetItSnow/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/NNmod/LetItSnow</projectUrl>
+    <description>Add snowfall background control</description>
+    <repository url="https://github.com/NNmod/LetItSnow" />
+    <dependencies>
+      <group targetFramework="net6.0-windows7.0" />
+    </dependencies>
+    <frameworkReferences>
+      <group targetFramework="net6.0-windows7.0">
+        <frameworkReference name="Microsoft.WindowsDesktop.App.WPF" />
+      </group>
+    </frameworkReferences>
+  </metadata>
+  <files>
+    <file src="G:\Programs\aaaVSProvPROGS\Nuget\LetItSnowWpf\bin\Release\net6.0-windows\LetItSnowWpf.dll" target="lib\net6.0-windows7.0\LetItSnowWpf.dll" />
+  </files>
+</package>

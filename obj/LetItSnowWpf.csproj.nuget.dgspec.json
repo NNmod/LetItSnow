@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files\\dotnet\\library-packs": {},
+          "G:\\Programs\\aaaVSProvPROGS\\Nuget\\LetItSnowWpf\\bin\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

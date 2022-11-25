@@ -4,8 +4,15 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>LetItSnowWpf</PackageId>
+    <Title>Let It Snow WPF</Title>
+    <Description>Add snowfall background control</Description>
     <RepositoryUrl>https://github.com/NNmod/LetItSnow</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/NNmod/LetItSnow</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/NNmod/LetItSnow/blob/master/LICENSE.md</PackageLicenseUrl>
+    <Authors>NNmod</Authors>
   </PropertyGroup>
 
 </Project>

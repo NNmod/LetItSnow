@@ -3,8 +3,11 @@
   <metadata>
     <id>LetItSnowWpf</id>
     <version>1.0.0</version>
-    <authors>LetItSnowWpf</authors>
-    <description>Package Description</description>
+    <title>Let It Snow WPF</title>
+    <authors>NNmod</authors>
+    <licenseUrl>https://github.com/NNmod/LetItSnow/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/NNmod/LetItSnow</projectUrl>
+    <description>Add snowfall background control</description>
     <repository url="https://github.com/NNmod/LetItSnow" />
     <dependencies>
       <group targetFramework="net6.0-windows7.0" />

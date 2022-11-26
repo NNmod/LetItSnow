@@ -8,7 +8,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>LetItSnowWpf</PackageId>
     <Title>Let It Snow WPF</Title>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <Description>Add snowfall background control</Description>
     <RepositoryUrl>https://github.com/NNmod/LetItSnow</RepositoryUrl>
     <PackageProjectUrl>https://github.com/NNmod/LetItSnow</PackageProjectUrl>

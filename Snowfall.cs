@@ -6,6 +6,9 @@ using System.Windows;
 
 namespace LetItSnowWpf;
 
+/// <summary>
+/// Snowfall control
+/// </summary>
 public class Snowfall : FrameworkElement
 {
     #region Variables
@@ -18,15 +21,12 @@ public class Snowfall : FrameworkElement
     /// <summary>
     /// Snowflakes geometries collection
     /// </summary>
-    private readonly List<Geometry> _snowflakes;
+    private readonly List<Geometry> _snowflakesGeometries;
 
-    private bool _isWorked;
-
-    private bool _isLoaded;
-
-    private bool _isRendering;
-
-    private TimeSpan _refreshTimeout = TimeSpan.FromMilliseconds(1);
+    /// <summary>
+    /// Current snowflakes value
+    /// </summary>
+    private int _snowflakes;
 
     #endregion
 
@@ -37,19 +37,70 @@ public class Snowfall : FrameworkElement
     /// Snowflake horizontal acceleration
     /// </summary>
     private static readonly DependencyProperty HorizontalSpeedProperty =
-        DependencyProperty.RegisterAttached("HorizontalSpeed", typeof(double), typeof(Snowfall), new UIPropertyMetadata((double)0));
+        DependencyProperty.RegisterAttached("HorizontalSpeed", typeof(double), 
+            typeof(Snowfall), new PropertyMetadata((double)0));
     
     /// <summary>
     /// Snowflake vertical acceleration
     /// </summary>
     private static readonly DependencyProperty VerticalSpeedProperty =
-        DependencyProperty.RegisterAttached("VerticalSpeed", typeof(double), typeof(Snowfall), new UIPropertyMetadata((double)0));
-    
+        DependencyProperty.RegisterAttached("VerticalSpeed", typeof(double), 
+            typeof(Snowfall), new PropertyMetadata((double)0));
+
     /// <summary>
     /// Snowflake rotate acceleration
     /// </summary>
     private static readonly DependencyProperty RotateSpeedProperty =
-        DependencyProperty.RegisterAttached("RotateSpeed", typeof(double), typeof(Snowfall), new UIPropertyMetadata((double)0));
+        DependencyProperty.RegisterAttached("RotateSpeed", typeof(double),
+            typeof(Snowfall), new PropertyMetadata((double)0));
+
+    private static readonly DependencyProperty MinSnowflakesProperty =
+        DependencyProperty.Register(nameof(MinSnowflakes), typeof(int), 
+            typeof(Snowfall), new PropertyMetadata((int)30));
+
+    private static readonly DependencyProperty MaxSnowflakesProperty =
+        DependencyProperty.Register(nameof(MaxSnowflakes), typeof(int),
+            typeof(Snowfall), new PropertyMetadata((int)60));
+
+    private static readonly DependencyProperty MinScaleProperty =
+        DependencyProperty.Register(nameof(MinScale), typeof(int),
+            typeof(Snowfall), new PropertyMetadata((int)5));
+
+    private static readonly DependencyProperty MaxScaleProperty =
+        DependencyProperty.Register(nameof(MaxScale), typeof(int),
+            typeof(Snowfall), new PropertyMetadata((int)15));
+
+    private static readonly DependencyProperty SnowflakesRatioProperty =
+        DependencyProperty.Register(nameof(SnowflakesRatio), typeof(double),
+            typeof(Snowfall), new PropertyMetadata((double)1));
+
+    private static readonly DependencyProperty HorizontalSpeedRatioProperty =
+        DependencyProperty.Register(nameof(HorizontalSpeedRatio), typeof(double),
+            typeof(Snowfall), new PropertyMetadata((double)0.08));
+
+    private static readonly DependencyProperty VerticalSpeedRatioProperty =
+        DependencyProperty.Register(nameof(VerticalSpeedRatio), typeof(double),
+            typeof(Snowfall), new PropertyMetadata((double)1));
+
+    private static readonly DependencyProperty RotateSpeedRatioProperty =
+        DependencyProperty.Register(nameof(RotateSpeedRatio), typeof(double),
+            typeof(Snowfall), new PropertyMetadata((double)1));
+
+    private static readonly DependencyProperty IsRotatedProperty =
+        DependencyProperty.Register(nameof(IsRotated), typeof(bool),
+            typeof(Snowfall), new PropertyMetadata(true));
+
+    private static readonly DependencyProperty IsAnimatedProperty =
+        DependencyProperty.Register(nameof(IsAnimated), typeof(bool),
+            typeof(Snowfall), new PropertyMetadata(false));
+
+    private static readonly DependencyProperty ForegroundProperty =
+        DependencyProperty.Register(nameof(Foreground), typeof(Brush),
+            typeof(Snowfall), new PropertyMetadata(Brushes.White));
+
+    private static readonly DependencyProperty RefreshTimeoutProperty =
+        DependencyProperty.Register(nameof(RefreshTimeout), typeof(TimeSpan),
+            typeof(Snowfall), new PropertyMetadata(TimeSpan.FromMilliseconds(1)));
 
     #endregion
 
@@ -58,87 +109,124 @@ public class Snowfall : FrameworkElement
 
     /// <summary>
     /// Minimum snowflakes value
+    /// Default: 30
+    /// Recommended: 10 - 30
     /// </summary>
-    public int MinSnowflakes { get; set; } = 20;
-    
+    public int MinSnowflakes
+    {
+        get => (int)GetValue(MinSnowflakesProperty);
+        set => SetValue(MinSnowflakesProperty, value);
+    }
+
     /// <summary>
     /// Maximum snowflakes value
+    /// Default: 60
+    /// Recommended: 40 - 70
     /// </summary>
-    public int MaxSnowflakes { get; set; } = 50;
-    
-    /// <summary>
-    /// Current snowflakes value
-    /// </summary>
-    private int Snowflakes { get; set; }
-    
-    /// <summary>
-    /// Minimum snowflakes Scale (from 0 to 100)
-    /// </summary>
-    public int MinScale { get; set; } = 5;
-    
-    /// <summary>
-    /// Maximum snowflakes Scale (from 0 to 100)
-    /// </summary>
-    public int MaxScale { get; set; } = 15;
-    
-    /// <summary>
-    /// How snowflakes depend on area
-    /// </summary>
-    public double SnowflakesRatio { get; set; } = 1;
-    
-    /// <summary>
-    /// How fast snowflakes move horizontal
-    /// </summary>
-    public double HorizontalSpeedRatio { get; set; } = 0.08;
-    
-    /// <summary>
-    /// How fast snowflakes fall
-    /// </summary>
-    public double VerticalSpeedRatio { get; set; } = 1;
-    
-    /// <summary>
-    /// How fast snowflakes rotate
-    /// </summary>
-    public double RotateSpeedRatio { get; set; } = 1;
-    
-    /// <summary>
-    /// True if snowflakes rotate, false is not
-    /// </summary>
-    public bool IsRotated { get; set; } = true;
-
-    /// <summary>
-    /// True if snowflakes animated, false is not
-    /// </summary>
-    public bool IsAnimated { get; set; }
-
-    /// <summary>
-    /// True if snow falling, false if not
-    /// </summary>
-    public bool IsWorked
+    public int MaxSnowflakes
     {
-        get => _isWorked;
-        set
-        {
-            if (_isWorked == value) return;
-            _isWorked = value;
-            if (_isLoaded && value && !_isRendering)
-                Start();
-        }
+        get => (int)GetValue(MaxSnowflakesProperty);
+        set => SetValue(MaxSnowflakesProperty, value);
     }
-    
+
+    /// <summary>
+    /// Minimum snowflakes scale
+    /// Default: int 5 = double 0.05
+    /// </summary>
+    public int MinScale
+    {
+        get => (int) GetValue(MinScaleProperty);
+        set => SetValue(MinScaleProperty, value);
+    }
+
+    /// <summary>
+    /// Maximum snowflakes scale
+    /// Default: int 15 = double 0.15
+    /// </summary>
+    public int MaxScale
+    {
+        get => (int)GetValue(MaxScaleProperty);
+        set => SetValue(MaxScaleProperty, value);
+    }
+
+    /// <summary>
+    /// The ratio of snowflakes depending on the area
+    /// Default: 1
+    /// </summary>
+    public double SnowflakesRatio
+    {
+        get => (double)GetValue(SnowflakesRatioProperty);
+        set => SetValue(SnowflakesRatioProperty, value);
+    }
+
+    /// <summary>
+    /// The ratio of snowflakes horizontal speed
+    /// Default: 0.08
+    /// </summary>
+    public double HorizontalSpeedRatio
+    {
+        get => (double)GetValue(HorizontalSpeedRatioProperty);
+        set => SetValue(HorizontalSpeedRatioProperty, value);
+    }
+
+    /// <summary>
+    /// The ratio of snowflakes vertical speed
+    /// Default: 1
+    /// </summary>
+    public double VerticalSpeedRatio
+    {
+        get => (double)GetValue(VerticalSpeedRatioProperty);
+        set => SetValue(VerticalSpeedRatioProperty, value);
+    }
+
+    /// <summary>
+    /// The ratio of snowflakes rotation speed
+    /// Default: 1
+    /// </summary>
+    public double RotateSpeedRatio
+    {
+        get => (double)GetValue(RotateSpeedRatioProperty);
+        set => SetValue(RotateSpeedRatioProperty, value);
+    }
+
+    /// <summary>
+    /// Snowflakes rotation ability
+    /// Default: true
+    /// </summary>
+    public bool IsRotated
+    {
+        get => (bool)GetValue(IsRotatedProperty);
+        set => SetValue(IsRotatedProperty, value);
+    }
+
+    /// <summary>
+    /// Snowflakes animation ability
+    /// Default: false
+    /// </summary>
+    public bool IsAnimated
+    {
+        get => (bool)GetValue(IsAnimatedProperty);
+        set => SetValue(IsAnimatedProperty, value);
+    }
+
+    /// <summary>
+    /// Snowflakes brush
+    /// </summary>
+    public Brush Foreground
+    {
+        get => (Brush)GetValue(ForegroundProperty);
+        set => SetValue(ForegroundProperty, value);
+    }
+
     /// <summary>
     /// Refresh timeout
     /// </summary>
     public TimeSpan RefreshTimeout
     {
-        get => _refreshTimeout;
-        set => _refreshTimeout = value.Milliseconds < 1 ? TimeSpan.FromMilliseconds(1) : value;
+        get => (TimeSpan)GetValue(RefreshTimeoutProperty);
+        set => SetValue(RefreshTimeoutProperty, value);
     }
-    
-    /// <summary>
-    /// Snowflakes crush
-    /// </summary>
-    public Brush Foreground { get; set; } = Brushes.White;
+
 
     #endregion
 
@@ -151,7 +239,7 @@ public class Snowfall : FrameworkElement
     public Snowfall()
     {
         Visuals = new VisualCollection(this);
-        _snowflakes = new List<Geometry>(new[]
+        _snowflakesGeometries = new List<Geometry>(new[]
         {
             Geometry.Parse("m 249.987 184.875 c -1.604 -1.794 -3.973 -2.72 -6.361 -2.463 c -2.395 0.246 -4.523 1.626 -5.727 3.71 l -2.145 3.717 l -12.848 -7.417 l 19.41 -12.416 c 3.49 -2.232 4.51 -6.87 2.277 -10.359 c -2.232 -3.491 -6.873 -4.506 -10.359 -2.277 l -25.133 16.077 l -18.625 -25.447 l 18.85 -25.752 l 24.609 16.813 c 1.295 0.884 2.768 1.308 4.225 1.308 c 2.395 0 4.746 -1.145 6.199 -3.27 c 2.336 -3.42 1.457 -8.087 -1.963 -10.424 l -19.842 -13.556 l 13.201 -7.622 l 2.455 4.252 c 1.207 2.093 3.35 3.476 5.756 3.714 c 0.246 0.024 0.494 0.036 0.74 0.036 c 2.145 0 4.201 -0.92 5.631 -2.549 l 25.274 -28.753 c 2.131 -2.424 2.473 -5.939 0.848 -8.727 c -1.625 -2.789 -4.852 -4.223 -8.012 -3.566 l -37.373 7.794 c -2.355 0.491 -4.332 2.082 -5.314 4.278 c -0.982 2.195 -0.854 4.729 0.35 6.813 l 2.146 3.717 l -12.848 7.417 l -1.047 -23.019 c -0.188 -4.138 -3.695 -7.337 -7.832 -7.151 c -4.139 0.188 -7.34 3.695 -7.152 7.833 l 1.342 29.478 l -31.877 3.467 l -12.632 -28.654 l 26.361 -13.661 c 3.678 -1.906 5.113 -6.433 3.207 -10.11 c -1.906 -3.678 -6.702 -5.113 -10.381 -3.208 l -20.73 10.602 v -14.5 h 4.836 c 0.006 0.001 0.014 0.001 0.02 0 c 4.143 0 7.5 -3.324 7.5 -7.467 c 0 -1.017 -0.203 -1.955 -0.57 -2.838 l -11.764 -35.672 c -1.008 -3.066 -3.866 -5.023 -7.094 -5.023 c -0.01 0 -0.02 0 -0.029 0 c -3.215 0 -6.074 1.918 -7.105 4.966 l -12.264 36.132 c -0.773 2.289 -0.398 4.811 1.012 6.774 c 1.408 1.964 3.676 3.128 6.094 3.128 h 4.365 v 14.91 l -21.389 -10.407 c -3.734 -1.793 -8.079 -0.222 -9.874 3.513 c -1.793 3.733 -0.153 8.215 3.582 10.009 l 26.297 12.618 l -12.721 28.888 l -30.577 -3.326 l 1.343 -29.452 c 0.189 -4.138 -3.011 -7.645 -7.148 -7.833 c -4.131 -0.164 -7.643 3.015 -7.832 7.151 l -1.046 23.019 l -12.557 -7.25 l 2.147 -3.717 c 1.203 -2.084 1.332 -4.618 0.35 -6.813 c -0.982 -2.196 -2.959 -3.787 -5.314 -4.278 l -37.373 -7.794 c -3.156 -0.661 -6.387 0.776 -8.012 3.566 c -1.625 2.788 -1.283 6.304 0.848 8.727 l 25.274 28.753 c 1.43 1.629 3.486 2.549 5.631 2.549 c 0.246 0 0.494 -0.012 0.74 -0.036 c 2.406 -0.238 4.549 -1.621 5.756 -3.714 l 2.455 -4.252 l 12.912 7.455 l -19.846 13.554 c -3.42 2.337 -4.299 7.004 -1.963 10.424 c 1.453 2.126 3.807 3.27 6.201 3.27 c 1.457 0 2.93 -0.424 4.223 -1.308 l 23.832 -16.28 l 18.337 25.054 l -18.131 24.771 l -24.34 -15.568 c -3.488 -2.23 -8.125 -1.213 -10.359 2.277 c -2.231 3.489 -1.211 8.127 2.277 10.359 l 19.412 12.416 l -12.559 7.25 l -2.145 -3.717 c -1.203 -2.084 -3.332 -3.464 -5.727 -3.71 c -2.4 -0.251 -4.76 0.669 -6.361 2.463 l -25.438 28.47 c -2.15 2.407 -2.52 5.919 -0.918 8.721 c 1.354 2.366 3.857 3.776 6.51 3.776 c 0.488 0 0.981 -0.048 1.473 -0.146 l 37.537 -7.511 c 2.369 -0.475 4.365 -2.061 5.361 -4.263 c 0.996 -2.202 0.871 -4.749 -0.338 -6.842 l -2.455 -4.252 l 12.912 -7.455 l 1.818 23.964 c 0.299 3.938 3.586 6.934 7.471 6.933 c 0.191 0 0.383 -0.007 0.576 -0.021 c 4.131 -0.314 7.225 -3.916 6.91 -8.046 l -2.207 -29.101 l 30.354 -3.301 l 12.617 28.613 l -26.143 12.56 c -3.734 1.794 -5.307 6.275 -3.514 10.009 c 1.795 3.734 6.005 5.305 9.738 3.513 l 21.389 -10.407 v 15.245 h -4.365 c -2.418 0 -4.686 1.131 -6.094 3.095 c -1.41 1.964 -1.785 4.452 -1.012 6.741 l 12.264 36.198 c 1.031 3.048 3.889 4.966 7.105 4.966 c 0.01 0 0.02 0 0.029 0 c 3.229 0 6.086 -1.957 7.094 -5.023 l 11.938 -36.132 c 0.752 -2.285 0.363 -4.792 -1.047 -6.741 s -3.67 -3.104 -6.076 -3.104 h -4.836 v -14.834 l 20.73 10.603 c 1.104 0.571 2.417 0.843 3.581 0.843 c 2.711 0 5.398 -1.477 6.732 -4.051 c 1.906 -3.678 0.504 -8.204 -3.174 -10.11 l -26.225 -13.6 l 12.521 -28.382 l 31.65 3.441 l -2.209 29.125 c -0.313 4.13 2.783 7.732 6.914 8.046 c 0.193 0.015 0.385 0.021 0.575 0.021 c 3.885 0 7.172 -2.995 7.471 -6.933 l 1.818 -23.963 l 13.203 7.622 l -2.455 4.252 c -1.209 2.093 -1.334 4.64 -0.338 6.842 c 0.996 2.201 2.992 3.788 5.361 4.263 l 37.537 7.511 c 0.492 0.099 0.984 0.145 1.473 0.145 c 2.652 0 5.156 -1.41 6.51 -3.776 c 1.602 -2.802 1.232 -6.313 -0.918 -8.721 l -25.434 -28.469 z"),
             Geometry.Parse("m 289.5 141.5 h -11.732 l 8.986 -9.283 c 2.881 -2.977 2.804 -7.725 -0.172 -10.605 c -2.978 -2.882 -7.726 -2.805 -10.605 0.172 l -19.087 19.716 h -13.918 l 8.842 -9.346 c 2.847 -3.009 2.715 -7.756 -0.294 -10.602 c -3.01 -2.845 -7.755 -2.717 -10.602 0.294 l -18.597 19.654 h -12.853 l 16.607 -18.014 c 1.337 -1.45 1.985 -3.286 1.977 -5.114 c 0.001 -0.046 0.008 -0.09 0.008 -0.136 c 0.031 -4.142 -3.3 -7.346 -7.442 -7.379 l -22.961 -0.201 l 8.155 -8.156 h 26.688 c 4.143 0 7.5 -3.357 7.5 -7.5 s -3.357 -7.5 -7.5 -7.5 h -11.686 l 10 -10 h 26.686 c 4.143 0 7.5 -3.357 7.5 -7.5 s -3.357 -7.5 -7.5 -7.5 h -11.686 l 8.045 -8.045 c 2.929 -2.93 2.929 -7.678 0 -10.607 c -2.929 -2.927 -7.677 -2.929 -10.607 0 l -8.294 8.294 l -0.212 -13.09 c -0.066 -4.1 -3.411 -7.552 -7.496 -7.552 c -0.042 0 -0.083 0 -0.125 0 c -4.142 0 -7.444 3.698 -7.377 7.84 l 0.444 27.567 l -9.842 9.842 l -0.355 -12.859 c -0.114 -4.141 -3.558 -7.375 -7.704 -7.29 c -4.141 0.114 -7.404 3.565 -7.29 7.704 l 0.748 27.047 l -8.613 8.613 l -0.241 -22.409 c 0.254 -2.085 -0.358 -4.264 -1.879 -5.942 c -2.783 -3.071 -7.691 -3.304 -10.76 -0.525 l -19.088 17.137 v -14.047 l 19.821 -18.595 c 3.009 -2.847 3.224 -7.594 0.377 -10.603 c -2.848 -3.01 -7.72 -3.141 -10.727 -0.294 l -9.471 8.842 v -13.919 l 19.883 -19.086 c 2.976 -2.881 3.136 -7.629 0.255 -10.605 c -2.879 -2.975 -7.752 -3.055 -10.73 -0.172 l -9.408 8.986 v -11.232 c 0 -4.143 -3.357 -7.5 -7.5 -7.5 c -4.143 0 -7.5 3.357 -7.5 7.5 v 10.528 l -8.03 -8.196 c -2.929 -2.93 -7.594 -2.929 -10.523 -0.001 c -2.93 2.929 -3.055 7.678 -0.126 10.606 l 18.679 18.805 v 13.786 l -8.03 -8.196 c -2.929 -2.93 -7.594 -2.929 -10.523 -0.001 c -2.93 2.929 -3.055 7.678 -0.126 10.606 l 18.679 18.805 v 13.02 l -16.711 -16.319 c -2.979 -2.881 -7.644 -2.801 -10.521 0.179 c -1.658 1.714 -2.287 4.015 -1.995 6.207 l -0.704 21.825 l -8.068 -7.923 v -26.731 c 0 -4.143 -3.357 -7.5 -7.5 -7.5 s -7.5 3.357 -7.5 7.5 v 11.73 l -10 -10 v -26.73 c 0 -4.143 -3.357 -7.5 -7.5 -7.5 s -7.5 3.357 -7.5 7.5 v 11.73 l -7.876 -8.043 c -2.929 -2.927 -7.593 -2.929 -10.524 0 c -2.929 2.93 -2.887 7.678 0.042 10.607 l 8.132 8.111 l -12.723 0.292 c -4.142 0.067 -7.439 3.683 -7.372 7.823 c 0.066 4.1 3.416 7.479 7.502 7.479 c 0.041 0 0.082 0 0.124 0 l 27.476 -0.605 l 9.802 9.802 l -12.859 0.356 c -4.141 0.114 -7.404 3.564 -7.29 7.704 c 0.112 4.07 3.447 7.293 7.493 7.293 c 0.07 0 0.141 -0.001 0.211 -0.003 l 27.047 -0.749 l 9.433 9.434 l -23.242 0.52 c -2.053 0.057 -4.567 0.588 -6.274 2.212 c -3.003 2.854 -3.123 7.601 -0.269 10.603 l 0.154 0.162 c 0.16 0.186 0.327 0.361 0.503 0.529 l 15.914 16.743 h -13.394 l -18.596 -19.654 c -2.848 -3.011 -7.595 -3.141 -10.603 -0.294 c -3.009 2.847 -3.141 7.594 -0.294 10.602 l 8.842 9.346 h -13.918 l -19.087 -19.717 c -2.879 -2.976 -7.627 -3.055 -10.605 -0.172 c -2.976 2.881 -3.053 7.629 -0.172 10.605 l 8.986 9.283 h -11.232 c -4.143 0 -7.5 3.357 -7.5 7.5 s 3.357 7.5 7.5 7.5 h 10.528 l -8.196 8.196 c -2.93 2.929 -2.93 7.678 -0.001 10.606 c 1.465 1.465 3.384 2.197 5.304 2.197 c 1.919 0 3.839 -0.732 5.303 -2.196 l 18.804 -18.802 h 13.786 l -8.196 8.196 c -2.93 2.929 -2.93 7.678 -0.001 10.606 c 1.465 1.465 3.384 2.197 5.304 2.197 c 1.919 0 3.839 -0.732 5.303 -2.196 l 18.804 -18.803 h 13.188 l -16.254 16.898 c -2.871 2.985 -2.779 7.733 0.206 10.604 c 1.392 1.338 3.164 2.025 4.952 2.083 c 0.038 0.002 0.073 0.008 0.111 0.009 l 23.938 0.622 l -9.387 9.387 l -27.046 -0.749 c -4.146 -0.085 -7.591 3.149 -7.705 7.289 c -0.115 4.141 3.149 7.591 7.289 7.705 l 12.86 0.356 l -10.06 10.06 l -27.22 -0.265 c -0.042 0 -0.083 0 -0.124 0 c -4.086 0 -7.431 3.055 -7.497 7.154 c -0.067 4.142 3.235 7.33 7.377 7.398 l 12.985 0.19 l -8.009 8.009 c -2.929 2.93 -2.929 7.678 0 10.607 c 1.465 1.464 3.385 2.196 5.304 2.196 c 1.919 0 3.672 -0.732 5.137 -2.196 l 6.878 -7.045 v 11.688 c 0 4.143 3.357 7.5 7.5 7.5 s 7.5 -3.357 7.5 -7.5 v -26.686 l 10 -10 v 11.686 c 0 4.143 3.357 7.5 7.5 7.5 s 7.5 -3.357 7.5 -7.5 v -26.686 l 9.691 -9.525 l 0.592 22.714 c -0.187 2.11 0.555 4.453 2.156 6.083 c 1.468 1.496 3.451 2.413 5.393 2.413 c 0.008 0 0.017 0 0.024 0 c 0.008 0 0.016 0 0.023 0 c 2.262 0.038 4.299 -1.509 5.524 -2.938 l 15.596 -15.495 v 12.19 l -18.637 18.805 c -2.929 2.929 -2.845 7.678 0.084 10.606 c 1.464 1.464 3.425 2.196 5.344 2.196 s 3.693 -0.732 5.158 -2.197 l 8.051 -8.196 v 13.786 l -18.637 18.805 c -2.929 2.929 -2.845 7.678 0.084 10.606 c 1.464 1.464 3.425 2.196 5.344 2.196 s 3.693 -0.732 5.158 -2.197 l 8.051 -8.196 v 11.03 c 0 4.143 3.357 7.5 7.5 7.5 c 4.143 0 7.5 -3.357 7.5 -7.5 v -11.732 l 9.45 8.986 c 1.457 1.41 3.42 2.111 5.299 2.111 c 1.96 0 3.961 -0.764 5.431 -2.283 c 2.881 -2.977 2.658 -7.725 -0.318 -10.605 l -19.862 -19.086 v -13.919 l 9.512 8.842 c 1.45 1.372 3.386 2.052 5.237 2.052 c 1.989 0 4.015 -0.786 5.491 -2.346 c 2.847 -3.009 2.569 -7.756 -0.44 -10.602 l -19.8 -18.595 v -13.093 l 17.333 16.332 c 1.901 1.648 3.724 2.938 6.243 2.938 c 0.018 0 0.034 0 0.052 0 c 4.118 0 7.471 -3.422 7.499 -7.547 l 0.166 -24.548 l 9.645 9.645 l -0.749 27.046 c -0.115 4.141 3.148 7.591 7.289 7.705 c 0.071 0.002 0.142 0.003 0.212 0.003 c 4.046 0 7.381 -3.223 7.493 -7.292 l 0.356 -12.86 l 9.845 9.845 l -0.448 27.408 c -0.067 4.142 3.235 7.595 7.377 7.595 c 0.042 0 0.083 0 0.124 0 c 4.086 0 7.431 -3.147 7.497 -7.246 l 0.212 -12.995 l 7.94 7.94 c 1.465 1.464 3.385 2.196 5.304 2.196 c 1.919 0 3.839 -0.732 5.304 -2.196 c 2.929 -2.93 2.929 -7.678 0 -10.607 l -7.092 -7.092 h 11.73 c 4.143 0 7.5 -3.357 7.5 -7.5 s -3.357 -7.5 -7.5 -7.5 h -26.73 l -10 -10 h 11.73 c 4.143 0 7.5 -3.357 7.5 -7.5 s -3.357 -7.5 -7.5 -7.5 h -26.73 l -9.082 -9.082 l 22.994 -1.004 c 1.944 -0.081 3.911 -0.969 5.123 -2.152 c 2.964 -2.894 3.02 -7.642 0.127 -10.605 l -15.771 -16.157 h 12.101 l 18.805 18.804 c 1.464 1.464 3.384 2.196 5.303 2.196 c 1.919 0 3.839 -0.732 5.304 -2.197 c 2.929 -2.929 2.929 -7.678 -0.001 -10.606 l -8.196 -8.196 h 13.786 l 18.805 18.804 c 1.464 1.464 3.384 2.196 5.303 2.196 c 1.919 0 3.839 -0.732 5.304 -2.197 c 2.929 -2.929 2.929 -7.678 -0.001 -10.606 l -8.196 -8.196 h 11.026 c 4.143 0 7.5 -3.357 7.5 -7.5 s -3.357 -7.502 -7.5 -7.502 z m -174.153 -16.207 l 16.207 16.207 h -23.286 l -14.64 -15.4 l 21.719 -0.807 z m -0.34 46.8 l -21.232 -0.552 l 14.468 -15.041 h 22.357 l -15.593 15.593 z m 25.16 16.955 l -14.174 14.079 l -0.543 -20.512 l 14.718 -14.801 v 21.234 z m 0 -59.817 l -15.282 -15.448 l 0.43 -20.098 l 14.851 14.439 v 21.107 z m 15 -20.771 l 16.731 -15.002 l 0.147 21.346 l -16.878 16.795 v -23.139 z m 16.078 95.087 l -16.078 -14.811 v -23.291 l 16.144 16.061 l -0.066 22.041 z m 12.056 -31.516 l -15.531 -15.531 h 21.424 l 14.304 14.649 l -20.197 0.882 z m 5.764 -30.531 h -22.252 l 16.104 -16.104 l 20.941 0.058 l -14.793 16.046 z"),
@@ -166,46 +254,16 @@ public class Snowfall : FrameworkElement
         });
         Loaded += (_, _) =>
         {
-            _isLoaded = true;
-            if (IsWorked)
-                Start();
+            StartRendering();
         };
-    }
-
-    #endregion
-
-
-    #region Public methods
-
-    /// <summary>
-    /// Start snow falling
-    /// </summary>
-    public async void Start()
-    {
-        _isRendering = true;
-        if (!IsWorked)
-            IsWorked = true;
-        if (!_isLoaded)
-            return;
-        await RecalculateSnowflakes();
-        while (IsWorked)
+        SizeChanged += async (_, e) =>
         {
-            await RecalculateSnowflakes();
-            if (IsAnimated)
-                await RefreshSnowflakes();
-            await Task.Delay(RefreshTimeout);
-        }
-        _isRendering = false;
-        Visuals.Clear();
-    }
-
-    /// <summary>
-    /// Stop snow falling
-    /// </summary>
-    public void Stop()
-    {
-        if (IsWorked)
-            IsWorked = false;
+            if (e.NewSize.Height == 0 || e.NewSize.Width == 0 || e.PreviousSize.Height == 0 || e.PreviousSize.Width == 0)
+                return;
+            if (!IsAnimated | e.NewSize.Height / e.PreviousSize.Height > 1.25 | e.NewSize.Height / e.PreviousSize.Height < 0.75 |
+                e.NewSize.Width / e.PreviousSize.Width > 1.25 | e.NewSize.Width / e.PreviousSize.Width < 0.75)
+                await RedrawSnowflakes();
+        };
     }
 
     #endregion
@@ -214,20 +272,46 @@ public class Snowfall : FrameworkElement
     #region Private methods
 
     /// <summary>
+    /// Start visual rendering
+    /// </summary>
+    private async void StartRendering()
+    {
+        await RecalculateSnowflakes();
+        while (IsLoaded)
+        {
+            await RecalculateSnowflakes();
+            if (IsAnimated)
+                await RefreshSnowflakes();
+            await Task.Delay(RefreshTimeout);
+        }
+    }
+
+    /// <summary>
     /// Recalculate the value of a snowflake depending on the area, add or remove snowflakes
     /// </summary>
     private Task RecalculateSnowflakes()
     {
         var extraSnowflakes = (int)((MaxSnowflakes - MinSnowflakes) *
                                     Math.Log10(1 + ActualHeight * ActualWidth * SnowflakesRatio * 0.000001));
-        Snowflakes = MinSnowflakes + extraSnowflakes;
-        if (Visuals.Count == Snowflakes) return Task.CompletedTask;
-        for (var i = 0; i < Math.Max(Visuals.Count, Snowflakes); i++)
+        _snowflakes = MinSnowflakes + extraSnowflakes;
+        if (Visuals.Count == _snowflakes) return Task.CompletedTask;
+        for (var i = 0; i < Math.Max(Visuals.Count, _snowflakes); i++)
         {
-            if (i < Visuals.Count)
-                Visuals.RemoveAt(i);
-            if (i < Snowflakes)
+            if (i < _snowflakes && i >= Visuals.Count)
                 Visuals.Insert(i, CreateSnowflake(i, false));
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Recalculate the value of a snowflake depending on the area, add or remove snowflakes
+    /// </summary>
+    private Task RedrawSnowflakes()
+    {
+        for (var i = 0; i < Visuals.Count; i++)
+        {
+            Visuals.RemoveAt(i);
+            Visuals.Insert(i, CreateSnowflake(i, false));
         }
         return Task.CompletedTask;
     }
@@ -243,8 +327,6 @@ public class Snowfall : FrameworkElement
             if (element == null)
                 continue;
             Visuals.RemoveAt(i);
-            //MessageBox.Show(element.GetValue(RotateSpeedProperty).ToString());
-            //MessageBox.Show(Vector.AngleBetween(new Vector(1, 0), Vector.Multiply(new Vector(1, 0), element.Transform.Value)).ToString());
             if (element.Offset.Y < ActualHeight)
             {
                 var scale = element.Transform.Value;
@@ -279,7 +361,7 @@ public class Snowfall : FrameworkElement
         visual.SetValue(VerticalSpeedProperty, rnd.Next(-5, 5) * 0.1);
         visual.SetValue(RotateSpeedProperty, 1 + rnd.Next(-5, 5) * 0.1);
         using var dc = visual.RenderOpen();
-        var snowflake = _snowflakes[index % 10];
+        var snowflake = _snowflakesGeometries[index % 10];
         dc.DrawGeometry(Foreground, null, snowflake);
         return visual;
     }
@@ -303,7 +385,7 @@ public class Snowfall : FrameworkElement
         visual.SetValue(VerticalSpeedProperty, verticalValue);
         visual.SetValue(RotateSpeedProperty, rotateValue);
         using var dc = visual.RenderOpen();
-        var snowflake = _snowflakes[index % 10];
+        var snowflake = _snowflakesGeometries[index % 10];
         dc.DrawGeometry(Foreground, null, snowflake);
         return visual;
     }

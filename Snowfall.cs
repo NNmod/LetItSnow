@@ -20,7 +20,7 @@ public class Snowfall : FrameworkElement
     /// </summary>
     private readonly List<Geometry> _snowflakes;
 
-    private bool _worked;
+    private bool _isWorked;
 
     private bool _isLoaded;
 
@@ -105,17 +105,22 @@ public class Snowfall : FrameworkElement
     /// True if snowflakes rotate, false is not
     /// </summary>
     public bool IsRotated { get; set; } = true;
-    
+
+    /// <summary>
+    /// True if snowflakes animated, false is not
+    /// </summary>
+    public bool IsAnimated { get; set; }
+
     /// <summary>
     /// True if snow falling, false if not
     /// </summary>
-    public bool Worked
+    public bool IsWorked
     {
-        get => _worked;
+        get => _isWorked;
         set
         {
-            if (_worked == value) return;
-            _worked = value;
+            if (_isWorked == value) return;
+            _isWorked = value;
             if (_isLoaded && value && !_isRendering)
                 Start();
         }
@@ -162,7 +167,7 @@ public class Snowfall : FrameworkElement
         Loaded += (_, _) =>
         {
             _isLoaded = true;
-            if (Worked)
+            if (IsWorked)
                 Start();
         };
     }
@@ -178,15 +183,16 @@ public class Snowfall : FrameworkElement
     public async void Start()
     {
         _isRendering = true;
-        if (!Worked)
-            Worked = true;
+        if (!IsWorked)
+            IsWorked = true;
         if (!_isLoaded)
             return;
         await RecalculateSnowflakes();
-        while (Worked)
+        while (IsWorked)
         {
             await RecalculateSnowflakes();
-            await RefreshSnowflakes();
+            if (IsAnimated)
+                await RefreshSnowflakes();
             await Task.Delay(RefreshTimeout);
         }
         _isRendering = false;
@@ -198,8 +204,8 @@ public class Snowfall : FrameworkElement
     /// </summary>
     public void Stop()
     {
-        if (Worked)
-            Worked = false;
+        if (IsWorked)
+            IsWorked = false;
     }
 
     #endregion

@@ -34,57 +34,64 @@ public class Snowfall : FrameworkElement
     #region DependencyProperties
 
     /// <summary>
-    /// Snowflake horizontal acceleration
+    /// Snowflake horizontal speed
     /// </summary>
     private static readonly DependencyProperty HorizontalSpeedProperty =
-        DependencyProperty.RegisterAttached("HorizontalSpeed", typeof(double), 
-            typeof(Snowfall), new PropertyMetadata((double)0));
-    
+        DependencyProperty.RegisterAttached("HorizontalSpeed", typeof(float),
+            typeof(Snowfall), new PropertyMetadata(0f));
+
     /// <summary>
     /// Snowflake vertical acceleration
     /// </summary>
-    private static readonly DependencyProperty VerticalSpeedProperty =
-        DependencyProperty.RegisterAttached("VerticalSpeed", typeof(double), 
-            typeof(Snowfall), new PropertyMetadata((double)0));
+    private static readonly DependencyProperty VerticalAccelerationProperty =
+        DependencyProperty.RegisterAttached("VerticalAcceleration", typeof(float),
+            typeof(Snowfall), new PropertyMetadata(0f));
 
     /// <summary>
     /// Snowflake rotate acceleration
     /// </summary>
-    private static readonly DependencyProperty RotateSpeedProperty =
-        DependencyProperty.RegisterAttached("RotateSpeed", typeof(double),
-            typeof(Snowfall), new PropertyMetadata((double)0));
+    private static readonly DependencyProperty RotateAccelerationProperty =
+        DependencyProperty.RegisterAttached("RotateAcceleration", typeof(float),
+            typeof(Snowfall), new PropertyMetadata(0f));
+
+    /// <summary>
+    /// Snowflake horizontal acceleration
+    /// </summary>
+    private static readonly DependencyProperty HorizontalAccelerationProperty =
+        DependencyProperty.RegisterAttached("HorizontalAcceleration", typeof(float),
+            typeof(Snowfall), new PropertyMetadata(0f));
 
     private static readonly DependencyProperty MinSnowflakesProperty =
-        DependencyProperty.Register(nameof(MinSnowflakes), typeof(int), 
-            typeof(Snowfall), new PropertyMetadata((int)30));
+        DependencyProperty.Register(nameof(MinSnowflakes), typeof(int),
+            typeof(Snowfall), new PropertyMetadata(30));
 
     private static readonly DependencyProperty MaxSnowflakesProperty =
         DependencyProperty.Register(nameof(MaxSnowflakes), typeof(int),
-            typeof(Snowfall), new PropertyMetadata((int)60));
+            typeof(Snowfall), new PropertyMetadata(60));
 
     private static readonly DependencyProperty MinScaleProperty =
         DependencyProperty.Register(nameof(MinScale), typeof(int),
-            typeof(Snowfall), new PropertyMetadata((int)5));
+            typeof(Snowfall), new PropertyMetadata(5));
 
     private static readonly DependencyProperty MaxScaleProperty =
         DependencyProperty.Register(nameof(MaxScale), typeof(int),
-            typeof(Snowfall), new PropertyMetadata((int)15));
+            typeof(Snowfall), new PropertyMetadata(15));
 
     private static readonly DependencyProperty SnowflakesRatioProperty =
-        DependencyProperty.Register(nameof(SnowflakesRatio), typeof(double),
-            typeof(Snowfall), new PropertyMetadata((double)1));
+        DependencyProperty.Register(nameof(SnowflakesRatio), typeof(float),
+            typeof(Snowfall), new PropertyMetadata(1f));
 
     private static readonly DependencyProperty HorizontalSpeedRatioProperty =
-        DependencyProperty.Register(nameof(HorizontalSpeedRatio), typeof(double),
-            typeof(Snowfall), new PropertyMetadata((double)0.08));
+        DependencyProperty.Register(nameof(HorizontalSpeedRatio), typeof(float),
+            typeof(Snowfall), new PropertyMetadata(0.08f));
 
     private static readonly DependencyProperty VerticalSpeedRatioProperty =
-        DependencyProperty.Register(nameof(VerticalSpeedRatio), typeof(double),
-            typeof(Snowfall), new PropertyMetadata((double)1));
+        DependencyProperty.Register(nameof(VerticalSpeedRatio), typeof(float),
+            typeof(Snowfall), new PropertyMetadata(1f));
 
     private static readonly DependencyProperty RotateSpeedRatioProperty =
-        DependencyProperty.Register(nameof(RotateSpeedRatio), typeof(double),
-            typeof(Snowfall), new PropertyMetadata((double)1));
+        DependencyProperty.Register(nameof(RotateSpeedRatio), typeof(float),
+            typeof(Snowfall), new PropertyMetadata(1f));
 
     private static readonly DependencyProperty IsRotatedProperty =
         DependencyProperty.Register(nameof(IsRotated), typeof(bool),
@@ -135,7 +142,7 @@ public class Snowfall : FrameworkElement
     /// </summary>
     public int MinScale
     {
-        get => (int) GetValue(MinScaleProperty);
+        get => (int)GetValue(MinScaleProperty);
         set => SetValue(MinScaleProperty, value);
     }
 
@@ -153,9 +160,9 @@ public class Snowfall : FrameworkElement
     /// The ratio of snowflakes depending on the area
     /// Default: 1
     /// </summary>
-    public double SnowflakesRatio
+    public float SnowflakesRatio
     {
-        get => (double)GetValue(SnowflakesRatioProperty);
+        get => (float)GetValue(SnowflakesRatioProperty);
         set => SetValue(SnowflakesRatioProperty, value);
     }
 
@@ -163,9 +170,9 @@ public class Snowfall : FrameworkElement
     /// The ratio of snowflakes horizontal speed
     /// Default: 0.08
     /// </summary>
-    public double HorizontalSpeedRatio
+    public float HorizontalSpeedRatio
     {
-        get => (double)GetValue(HorizontalSpeedRatioProperty);
+        get => (float)GetValue(HorizontalSpeedRatioProperty);
         set => SetValue(HorizontalSpeedRatioProperty, value);
     }
 
@@ -173,9 +180,9 @@ public class Snowfall : FrameworkElement
     /// The ratio of snowflakes vertical speed
     /// Default: 1
     /// </summary>
-    public double VerticalSpeedRatio
+    public float VerticalSpeedRatio
     {
-        get => (double)GetValue(VerticalSpeedRatioProperty);
+        get => (float)GetValue(VerticalSpeedRatioProperty);
         set => SetValue(VerticalSpeedRatioProperty, value);
     }
 
@@ -183,9 +190,9 @@ public class Snowfall : FrameworkElement
     /// The ratio of snowflakes rotation speed
     /// Default: 1
     /// </summary>
-    public double RotateSpeedRatio
+    public float RotateSpeedRatio
     {
-        get => (double)GetValue(RotateSpeedRatioProperty);
+        get => (float)GetValue(RotateSpeedRatioProperty);
         set => SetValue(RotateSpeedRatioProperty, value);
     }
 
@@ -269,6 +276,23 @@ public class Snowfall : FrameworkElement
     #endregion
 
 
+    #region Public methods
+
+    /// <summary>
+    /// Redraw all snowflakes depending on the area, remove and add snowflakes
+    /// </summary>
+    public Task RedrawSnowflakes()
+    {
+        for (var i = 0; i < Visuals.Count; i++)
+        {
+            Visuals.RemoveAt(i);
+            Visuals.Insert(i, CreateSnowflake(false));
+        }
+        return Task.CompletedTask;
+    }
+
+    #endregion
+
     #region Private methods
 
     /// <summary>
@@ -294,25 +318,11 @@ public class Snowfall : FrameworkElement
         var extraSnowflakes = (int)((MaxSnowflakes - MinSnowflakes) *
                                     Math.Log10(1 + ActualHeight * ActualWidth * SnowflakesRatio * 0.000001));
         _snowflakes = MinSnowflakes + extraSnowflakes;
-        if (Visuals.Count == _snowflakes) return Task.CompletedTask;
+        if (Visuals.Count == _snowflakes)
+            return Task.CompletedTask;
         for (var i = 0; i < Math.Max(Visuals.Count, _snowflakes); i++)
-        {
             if (i < _snowflakes && i >= Visuals.Count)
-                Visuals.Insert(i, CreateSnowflake(i, false));
-        }
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Recalculate the value of a snowflake depending on the area, add or remove snowflakes
-    /// </summary>
-    private Task RedrawSnowflakes()
-    {
-        for (var i = 0; i < Visuals.Count; i++)
-        {
-            Visuals.RemoveAt(i);
-            Visuals.Insert(i, CreateSnowflake(i, false));
-        }
+                Visuals.Insert(i, CreateSnowflake(false));
         return Task.CompletedTask;
     }
 
@@ -321,26 +331,14 @@ public class Snowfall : FrameworkElement
     /// </summary>
     private Task RefreshSnowflakes()
     {
-        for (var i = 0; i < Visuals.Count; i++)
+        foreach (var visual in Visuals)
         {
-            var element = Visuals[i] as DrawingVisual;
-            if (element == null)
+            if (visual is not DrawingVisual element)
                 continue;
-            Visuals.RemoveAt(i);
             if (element.Offset.Y < ActualHeight)
-            {
-                var scale = element.Transform.Value;
-                scale.Rotate(-Vector.AngleBetween(new Vector(1, 0), Vector.Multiply(new Vector(1, 0), element.Transform.Value)));
-                Visuals.Insert(i, UpdateSnowflake(i,
-                    (double)element.GetValue(HorizontalSpeedProperty),
-                    (double)element.GetValue(VerticalSpeedProperty),
-                    (double)element.GetValue(RotateSpeedProperty),
-                    element.Offset, element.ContentBounds, scale.M11,
-                    Vector.AngleBetween(new Vector(1, 0), Vector.Multiply(new Vector(1, 0), element.Transform.Value))
-                ));
-            }
+                UpdateSnowflake(element);
             else
-                Visuals.Insert(i, CreateSnowflake(i));
+                ResetSnowflake(element);
         }
         return Task.CompletedTask;
     }
@@ -348,46 +346,80 @@ public class Snowfall : FrameworkElement
     /// <summary>
     /// Create snowflakes visual
     /// </summary>
-    private DrawingVisual CreateSnowflake(int index, bool isRestart = true)
+    private DrawingVisual CreateSnowflake(bool isRestart = true)
     {
         var visual = new DrawingVisual();
-        var halfWidth = (int)ActualWidth / 2;
         var rnd = new Random();
+        var transform = new TransformGroup();
+
+        var width = (int)ActualWidth;
+        var halfWidth = width / 2;
+        var scale = rnd.Next(MinScale, MaxScale) * 0.01f;
+        var snowflake = _snowflakesGeometries[rnd.Next(0, 10)];
+
         visual.Offset = isRestart ? new Vector(halfWidth + rnd.Next(-halfWidth, halfWidth), -50) :
-            new Vector(halfWidth + rnd.Next(-halfWidth, halfWidth), rnd.Next(-50, (int)ActualHeight));
-        var scale = rnd.Next(MinScale, MaxScale) * 0.01;
-        visual.Transform = new ScaleTransform(scale, scale);
-        visual.SetValue(HorizontalSpeedProperty, rnd.Next(-1, 1) * 0.5);
-        visual.SetValue(VerticalSpeedProperty, rnd.Next(-5, 5) * 0.1);
-        visual.SetValue(RotateSpeedProperty, 1 + rnd.Next(-5, 5) * 0.1);
+            new Vector(halfWidth + rnd.Next(-halfWidth, halfWidth), rnd.Next(-50, width));
+        transform.Children.Add(new ScaleTransform(scale, scale));
+        transform.Children.Add(new RotateTransform(0, snowflake.Bounds.Width * scale / 2, snowflake.Bounds.Height * scale / 2));
+        visual.Transform = transform;
+
+        visual.SetValue(HorizontalSpeedProperty, rnd.Next(-1, 1) * 0.5f);
+        visual.SetValue(HorizontalAccelerationProperty, rnd.Next(0, 4) * 0.1f);
+        visual.SetValue(VerticalAccelerationProperty, rnd.Next(-5, 5) * 0.1f);
+        visual.SetValue(RotateAccelerationProperty, 1 + rnd.Next(-5, 5) * 0.1f);
+
         using var dc = visual.RenderOpen();
-        var snowflake = _snowflakesGeometries[index % 10];
         dc.DrawGeometry(Foreground, null, snowflake);
+
         return visual;
     }
 
     /// <summary>
     /// Update snowflakes visual
     /// </summary>
-    private DrawingVisual UpdateSnowflake(int index, double horizontalValue, double verticalValue, double rotateValue, Vector offset, Rect bounds, double scale, double angle)
+    private void UpdateSnowflake(ContainerVisual visual)
     {
-        var visual = new DrawingVisual();
-        var rnd = new Random();
-        var horizontalSpeed = horizontalValue + rnd.Next(0, 4) * 0.25 * HorizontalSpeedRatio;
-        var verticalSpeed = 1 * (VerticalSpeedRatio + verticalValue);
-        visual.Offset = new Vector(offset.X + Math.Cos(horizontalSpeed), offset.Y + verticalSpeed);
-        var transform = new TransformGroup();
-        transform.Children.Add(new ScaleTransform(scale, scale));
-        if (IsRotated)
-            transform.Children.Add(new RotateTransform(angle + rotateValue * 1 * RotateSpeedRatio, bounds.Width * scale / 2, bounds.Height * scale / 2));
+        var horizontalSpeed = (float)visual.GetValue(HorizontalSpeedProperty) +
+                              (float)visual.GetValue(HorizontalAccelerationProperty) * HorizontalSpeedRatio;
+        var verticalSpeed = 1 * (VerticalSpeedRatio + (float)visual.GetValue(VerticalAccelerationProperty));
+        var transform = visual.Transform as TransformGroup;
+
+        if (transform != null && transform.Children.Count > 1 && IsRotated)
+            (transform.Children[1] as RotateTransform)!.Angle += (float)visual.GetValue(RotateAccelerationProperty) 
+                                                                 * 1 * RotateSpeedRatio;
         visual.Transform = transform;
+        visual.Offset = new Vector(visual.Offset.X + Math.Cos(horizontalSpeed), visual.Offset.Y + verticalSpeed);
+
         visual.SetValue(HorizontalSpeedProperty, horizontalSpeed);
-        visual.SetValue(VerticalSpeedProperty, verticalValue);
-        visual.SetValue(RotateSpeedProperty, rotateValue);
-        using var dc = visual.RenderOpen();
-        var snowflake = _snowflakesGeometries[index % 10];
-        dc.DrawGeometry(Foreground, null, snowflake);
-        return visual;
+    }
+
+    /// <summary>
+    /// Reset snowflakes visual
+    /// </summary>
+    private void ResetSnowflake(ContainerVisual visual)
+    {
+        var rnd = new Random();
+
+        var width = (int)ActualWidth;
+        var halfWidth = width / 2;
+        var scale = rnd.Next(MinScale, MaxScale) * 0.01f;
+        var transform = visual.Transform as TransformGroup;
+
+        if (transform != null && transform.Children.Count > 1)
+        {
+            (transform.Children[0] as ScaleTransform)!.ScaleX = scale;
+            (transform.Children[0] as ScaleTransform)!.ScaleY = scale;
+            (transform.Children[1] as RotateTransform)!.Angle = 0;
+            (transform.Children[1] as RotateTransform)!.CenterX = visual.ContentBounds.Width * scale / 2;
+            (transform.Children[1] as RotateTransform)!.CenterY = visual.ContentBounds.Height * scale / 2;
+        }
+        visual.Transform = transform;
+        visual.Offset = new Vector(halfWidth + rnd.Next(-halfWidth, halfWidth), -50);
+
+        visual.SetValue(HorizontalSpeedProperty, rnd.Next(-1, 1) * 0.5f);
+        visual.SetValue(HorizontalAccelerationProperty, rnd.Next(0, 4) * 0.1f);
+        visual.SetValue(VerticalAccelerationProperty, rnd.Next(-5, 5) * 0.1f);
+        visual.SetValue(RotateAccelerationProperty, 1 + rnd.Next(-5, 5) * 0.1f);
     }
 
     #endregion
